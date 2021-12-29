@@ -33,8 +33,8 @@ func doUnary(c calculatorpb.CalculatorServiceClient) {
 
 	res, err := c.Calculate(context.Background(), req)
 	if err != nil {
-		log.Fatalf("Error while calling Greet RPC: %v", err)
+		log.Fatalf("Error while calling Calculate RPC: %v", err)
 	}
 
-	log.Printf("Response from Greet %v", res.Result)
+	log.Printf("Response from Calculate %v", res.Result)
 }
