@@ -16,7 +16,22 @@ message CalculatorResponse {
     int32 result = 1;
 }
 
+message PrimeNumberDecomposition {
+    int64 prime_number = 1;
+}
+
+message PrimeNumberDecompositionRequest {
+    PrimeNumberDecomposition PrimeNumberDecomposition = 1;
+}
+
+message PrimeNumberDecompositionResponse {
+    int64 result = 1;
+}
+
 service CalculatorService{
     // Unary
     rpc Calculate(CalculatorRequest) returns (CalculatorResponse) {};
+
+    // Server Streaming
+    rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {};
 }
