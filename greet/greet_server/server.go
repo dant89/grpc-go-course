@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"strconv"
@@ -37,6 +38,54 @@ func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb
 		time.Sleep(500 * time.Millisecond)
 	}
 	return nil
+}
+
+func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
+	fmt.Printf("LongGreet function was invoked with a streaming request")
+	result := ""
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			// End of client stream
+			return stream.SendAndClose(&greetpb.LongGreetResponse{
+				Result: result,
+			})
+
+		}
+		if err != nil {
+			log.Fatalf("Error while reading client stream: %v", err)
+			return err
+		}
+
+		firstName := req.GetGreeting().GetFirstName()
+		result += "Hello " + firstName + "! "
+	}
+}
+
+func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	fmt.Printf("GreetEveryone function was invoked with a bi directional streaming request")
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+
+		}
+		if err != nil {
+			log.Fatalf("Error while reading client stream: %v", err)
+			return err
+		}
+		firstName := req.Greeting.GetFirstName()
+		result := "Hello " + firstName + "! "
+
+		sendErr := stream.Send(&greetpb.GreetEveryoneResponse{
+			Result: result,
+		})
+		if sendErr != nil {
+			log.Fatalf("Error while sending data to client: %v", sendErr)
+			return sendErr
+		}
+	}
 }
 
 func main() {

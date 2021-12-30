@@ -28,10 +28,53 @@ message PrimeNumberDecompositionResponse {
     int64 result = 1;
 }
 
+message ComputeAverage {
+    int64 digit = 1;
+}
+
+message ComputeAverageRequest {
+    ComputeAverage ComputeAverage = 1;
+}
+
+message ComputeAverageResponse {
+    double result = 1;
+}
+
+message FindMaximum {
+    int64 digit = 1;
+}
+
+message FindMaximumRequest {
+    FindMaximum FindMaximum = 1;
+}
+
+message FindMaximumResponse {
+    int64 result = 1;
+}
+
+message SquareRootRequest {
+    int32 number = 1;
+}
+
+message SquareRootResponse {
+    double number_root = 1;
+}
+
 service CalculatorService{
     // Unary
     rpc Calculate(CalculatorRequest) returns (CalculatorResponse) {};
 
     // Server Streaming
     rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest) returns (stream PrimeNumberDecompositionResponse) {};
+
+    // Client Streaming
+    rpc ComputeAverage(stream ComputeAverageRequest) returns (ComputeAverageResponse) {};
+
+    // Bi Directional Streaming
+    rpc FindMaximum(stream FindMaximumRequest) returns (stream FindMaximumResponse) {};
+
+    // Error handling
+    // This RPC will throw an exception if the sent number is negative
+    // The error being sent is of typ INVALID_ARGUMENT
+    rpc SquareRoot(SquareRootRequest) returns (SquareRootResponse) {};
 }

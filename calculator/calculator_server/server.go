@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"math"
 	"net"
 
 	"github.com/dant89/grpc-go-course/calculator/calculatorpb"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct{}
@@ -23,7 +27,7 @@ func (*server) Calculate(ctx context.Context, req *calculatorpb.CalculatorReques
 }
 
 func (*server) PrimeNumberDecomposition(req *calculatorpb.PrimeNumberDecompositionRequest, stream calculatorpb.CalculatorService_PrimeNumberDecompositionServer) error {
-	fmt.Printf("GreetManyTimes function was invovked with %v", req)
+	fmt.Printf("PrimeNumberDecomposition function was invovked with %v", req)
 
 	/*
 		k = 2
@@ -52,6 +56,74 @@ func (*server) PrimeNumberDecomposition(req *calculatorpb.PrimeNumberDecompositi
 	}
 
 	return nil
+}
+
+func (*server) ComputeAverage(stream calculatorpb.CalculatorService_ComputeAverageServer) error {
+	fmt.Println("ComputeAverage function was invovked")
+
+	var digits []int64
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			// End of client stream
+			var total int64
+			for _, digit := range digits {
+				total += digit
+			}
+			result := float64(total) / float64(len(digits))
+
+			return stream.SendAndClose(&calculatorpb.ComputeAverageResponse{
+				Result: result,
+			})
+		}
+		if err != nil {
+			log.Fatalf("Error while reading client stream: %v", err)
+		}
+
+		digits = append(digits, req.GetComputeAverage().GetDigit())
+	}
+}
+
+func (*server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServer) error {
+	fmt.Printf("FindMaximum function was invoked with a bi directional streaming request")
+	maximum := int64(0)
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+
+		}
+		if err != nil {
+			log.Fatalf("Error while reading client stream: %v", err)
+			return err
+		}
+		digit := req.FindMaximum.GetDigit()
+		if digit > maximum {
+			maximum = digit
+			sendErr := stream.Send(&calculatorpb.FindMaximumResponse{
+				Result: maximum,
+			})
+			if sendErr != nil {
+				log.Fatalf("Error while sending data to client: %v", sendErr)
+				return sendErr
+			}
+		}
+	}
+}
+
+func (*server) SquareRoot(ctx context.Context, req *calculatorpb.SquareRootRequest) (*calculatorpb.SquareRootResponse, error) {
+	fmt.Printf("SquareRoot function was invovked with %v", req)
+	number := req.GetNumber()
+	if number < 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Received a negative number: %v", number),
+		)
+	}
+	return &calculatorpb.SquareRootResponse{
+		NumberRoot: math.Sqrt(float64(number)),
+	}, nil
 }
 
 func main() {
